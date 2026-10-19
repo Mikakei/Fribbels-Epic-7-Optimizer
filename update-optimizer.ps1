@@ -48,78 +48,109 @@ if (Invoke-Git status --porcelain --untracked-files=no) {
     Fail "There are uncommitted changes. Commit or discard them first (git status)."
 }
 
+# Steps still owed from a merge are kept in the git dir, so a failed build is retried on the next run
+$PendingFile = Join-Path ((Invoke-Git rev-parse --absolute-git-dir) | Select-Object -First 1) 'fribbels-update-pending'
+$AllTasks = @('deps', 'backend', 'app')
+$tasks = @()
+if (Test-Path $PendingFile) {
+    $tasks = @(Get-Content $PendingFile | Where-Object { $AllTasks -contains $_ })
+    if ($tasks.Count) { Write-Host "Resuming unfinished steps from the last update: $($tasks -join ', ')" }
+}
+
+function Save-Pending {
+    if ($script:tasks.Count) {
+        Set-Content -Path $PendingFile -Value $script:tasks -Encoding ascii
+    } elseif (Test-Path $PendingFile) {
+        Remove-Item $PendingFile
+    }
+}
+
+function Complete-Task([string]$name) {
+    $script:tasks = @($script:tasks | Where-Object { $_ -ne $name })
+    Save-Pending
+}
+
 Step "Fetching $Remote/$Branch"
 & git -C $Root fetch $Remote $Branch
 if ($LASTEXITCODE -ne 0) { Fail "git fetch failed. Check the network connection to GitHub." }
 
-$incoming = Invoke-Git log --oneline "HEAD..$Remote/$Branch"
-if (-not $incoming) {
+$incoming = @(Invoke-Git log --oneline "HEAD..$Remote/$Branch")
+$dataChanged = $false
+if ($incoming.Count) {
+    Write-Host "Incoming upstream commits:"
+    $incoming | ForEach-Object { Write-Host "  $_" }
+
+    $before = (Invoke-Git rev-parse HEAD) | Select-Object -First 1
+
+    Step "Merging"
+    & git -C $Root merge --no-edit "$Remote/$Branch"
+    if ($LASTEXITCODE -ne 0) {
+        $conflicts = @(Invoke-Git diff --name-only --diff-filter=U)
+        if ($conflicts.Count -eq 1 -and $conflicts[0] -eq $Jar) {
+            # Both sides changed the binary jar; it is rebuilt from the merged source below anyway
+            Write-Host "Only $Jar conflicted; it will be rebuilt from the merged source."
+            Invoke-Git checkout --theirs -- $Jar | Out-Null
+            Invoke-Git add -- $Jar | Out-Null
+            Invoke-Git commit --no-edit | Out-Null
+            $tasks += 'backend'
+        } else {
+            & git -C $Root merge --abort
+            Fail ("Merge conflicts need manual resolution: " + ($conflicts -join ', '))
+        }
+    }
+
+    $changed = @(Invoke-Git diff --name-only $before HEAD)
+    if ($changed | Where-Object { $_ -match '^(app/)?(package\.json|yarn\.lock)$' }) { $tasks += 'deps', 'app' }
+    if ($changed | Where-Object { $_ -match '^backend/(src/|pom\.xml)' -or $_ -eq $Jar }) { $tasks += 'backend' }
+    if ($changed | Where-Object { $_ -match '^(app|configs|internals)/' -and $_ -notmatch '^app/(js|assets|css|locales)/' }) { $tasks += 'app' }
+    $dataChanged = [bool]($changed | Where-Object { $_ -match '^data/(cache|cachedimages|locales)/' })
+} elseif (-not $tasks.Count) {
     Write-Host "Already up to date."
     exit 0
 }
-Write-Host "Incoming upstream commits:"
-$incoming | ForEach-Object { Write-Host "  $_" }
 
-$before = (Invoke-Git rev-parse HEAD) | Select-Object -First 1
-$rebuildBackend = $false
+# Keep a fixed order and drop duplicates
+$tasks = @($AllTasks | Where-Object { $tasks -contains $_ })
+$ran = @($tasks)
+Save-Pending
 
-Step "Merging"
-& git -C $Root merge --no-edit "$Remote/$Branch"
-if ($LASTEXITCODE -ne 0) {
-    $conflicts = @(Invoke-Git diff --name-only --diff-filter=U)
-    if ($conflicts.Count -eq 1 -and $conflicts[0] -eq $Jar) {
-        # Both sides changed the binary jar; it is rebuilt from the merged source below anyway
-        Write-Host "Only $Jar conflicted; it will be rebuilt from the merged source."
-        Invoke-Git checkout --theirs -- $Jar | Out-Null
-        Invoke-Git add -- $Jar | Out-Null
-        Invoke-Git commit --no-edit | Out-Null
-        $rebuildBackend = $true
-    } else {
-        & git -C $Root merge --abort
-        Fail ("Merge conflicts need manual resolution: " + ($conflicts -join ', '))
-    }
-}
-
-$changed = @(Invoke-Git diff --name-only $before HEAD)
-$needDeps = [bool]($changed | Where-Object { $_ -match '^(app/)?(package\.json|yarn\.lock)$' })
-$rebuildBackend = $rebuildBackend -or [bool]($changed | Where-Object { $_ -match '^backend/(src/|pom\.xml)' -or $_ -eq $Jar })
-$needAppBuild = $needDeps -or [bool]($changed | Where-Object { $_ -match '^(app|configs|internals)/' -and $_ -notmatch '^app/(js|assets|css|locales)/' })
-$dataChanged = [bool]($changed | Where-Object { $_ -match '^data/(cache|cachedimages|locales)/' })
-
-if ($needDeps) {
+if ($tasks -contains 'deps') {
     Step "Installing JS dependencies"
     Push-Location $Root
     & yarn install --non-interactive --network-timeout 600000
     $code = $LASTEXITCODE
     Pop-Location
-    if ($code -ne 0) { Fail "yarn install failed" }
+    if ($code -ne 0) { Fail "yarn install failed. Run the update again to retry." }
     if (Invoke-Git status --porcelain --untracked-files=no -- yarn.lock app/yarn.lock) {
         Invoke-Git add -- yarn.lock app/yarn.lock | Out-Null
         Invoke-Git commit -m "Update yarn.lock after merging upstream" | Out-Null
     }
+    Complete-Task 'deps'
 }
 
-if ($rebuildBackend) {
+if ($tasks -contains 'backend') {
     Step "Rebuilding backend.jar"
     Push-Location (Join-Path $Root 'backend')
     & $Mvn -q -B package "-Dmaven.repo.local=$(Join-Path $Toolchain 'm2')"
     $code = $LASTEXITCODE
     Pop-Location
-    if ($code -ne 0) { Fail "Maven build failed" }
+    if ($code -ne 0) { Fail "Maven build failed. Run the update again to retry." }
     Copy-Item -Force (Join-Path $Root 'backend\target\backend.jar') (Join-Path $Root $Jar)
     if (Invoke-Git status --porcelain --untracked-files=no -- $Jar) {
         Invoke-Git add -- $Jar | Out-Null
         Invoke-Git commit -m "Rebuild backend.jar after merging upstream" | Out-Null
     }
+    Complete-Task 'backend'
 }
 
-if ($needAppBuild) {
+if ($tasks -contains 'app') {
     Step "Building app"
     Push-Location $Root
     & yarn build
     $code = $LASTEXITCODE
     Pop-Location
-    if ($code -ne 0) { Fail "yarn build failed" }
+    if ($code -ne 0) { Fail "yarn build failed. Run the update again to retry." }
+    Complete-Task 'app'
 }
 
 # Upstream could reintroduce the two settings this branch turned off
@@ -133,8 +164,6 @@ if ($mainDev -match 'allowDowngrade\s*=\s*true') {
 }
 
 Step "Done"
-Write-Host ("Merged {0} upstream commit(s)." -f @($incoming).Count)
-Write-Host ("JS dependencies reinstalled: {0}" -f $needDeps)
-Write-Host ("backend.jar rebuilt: {0}" -f $rebuildBackend)
-Write-Host ("App rebuilt: {0}" -f $needAppBuild)
+Write-Host ("Merged {0} upstream commit(s)." -f $incoming.Count)
+Write-Host ("Steps run: {0}" -f $(if ($ran.Count) { $ran -join ', ' } else { 'none needed' }))
 Write-Host ("Bundled hero/artifact data or translations changed: {0}" -f $dataChanged)
