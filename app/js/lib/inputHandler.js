@@ -153,16 +153,8 @@ function setupLinks() {
         electron.shell.openExternal('https://discord.gg/rDmB4Un7qg');
     });
 
-    $('#donateBadge').on('click', (event) => {
-        electron.shell.openExternal('https://www.buymeacoffee.com/fribbels');
-    });
-
     $('#githubBadge').on('click', (event) => {
         electron.shell.openExternal('https://github.com/fribbels/Fribbels-Epic-7-Optimizer');
-    });
-
-    $('#coffeeImage').on('click', (event) => {
-        electron.shell.openExternal('https://www.buymeacoffee.com/fribbels');
     });
 }
 

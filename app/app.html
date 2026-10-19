@@ -81,12 +81,6 @@ window.jQuery = $;
 
   <input type="radio" name="tabset" id="tab10" disabled >
   <label for="tab10" class="tabLabelLink" data-t onclick="electron.shell.openExternal('https://fribbels.github.io/e7/gw-meta.html');" >GW Meta ⧉</label>
-
-  <input type="radio" name="tabset" id="tab11" disabled >
-  <label for="tab11" class="tabLabelLink" data-t onclick="electron.shell.openExternal('https://www.buymeacoffee.com/fribbels');" >Donate ⧉</label>
-
-  <input type="radio" name="tabset" id="tab12" disabled >
-  <label for="tab12" class="tabLabelLink" data-t onclick="electron.shell.openExternal('https://discord.gg/rDmB4Un7qg');" >Discord ⧉</label>
   <!-- Tab 10 -->
 <!--   <input type="radio" name="tabset" id="tab10" style="display: none">
   <label for="tab10" class="tabLabel" style="display: none" data-t>Subprocess Debugger</label>
@@ -2219,31 +2213,23 @@ window.jQuery = $;
 
     <div id="aboutTab" class="tab-panel">
 
-      <h1 data-t>Links</h1>
-      <img class="badgeIcon" id="discordBadge" src="./assets/badgediscord.png"></img>
-      <p data-t>Join the optimizer Discord server for tech support, suggestions, and announcements.</p>
+      <h1 data-t>About this build</h1>
+      <p class="thankYouContainer" data-t>This is a maintained copy of Fribbels Epic 7 Optimizer. The original project has not been updated for a long time, so I keep this copy running on my own: adding new heroes, sets and data from game patches, and fixing problems as they come up. It is not an official release.</p>
+      <p class="thankYouContainer" data-t>Please report problems with this copy to its maintainer instead of the original author.</p>
 
-      <div class="horizontalSpace" ></div>
-      <div class="horizontalSpace" ></div>
-      <div class="horizontalSpace" ></div>
-      <div class="horizontalSpace" ></div>
+      <h1 data-t>Original project</h1>
       <img class="badgeIcon" id="githubBadge" src="./assets/badgegithub.png"></img>
-      <p data-t>Instructions and guides can be found on the GitHub page, along with new version downloads.</p>
+      <p data-t>The original project by Fribbels: source code, guides and official releases.</p>
       <div class="horizontalSpace" ></div>
       <div class="horizontalSpace" ></div>
       <div class="horizontalSpace" ></div>
       <div class="horizontalSpace" ></div>
-      <img class="badgeIcon" id="donateBadge" src="./assets/badgedonate_dt.png"></img>
-      <p data-t>Support the optimizer and future updates!</p>
+      <img class="badgeIcon" id="discordBadge" src="./assets/badgediscord.png"></img>
+      <p data-t>The original optimizer Discord community.</p>
 
-
-      <h1 data-t>Thank you</h1>
-      <p class="thankYouContainer" data-t>
-        I want to thank the entire community for all the love and support that you've shown for the optimizer. This project has been a bunch of fun to build, and I hope you find it just as enjoyable to optimize and gear your favorite characters. Please feel free to reach out to me on the Discord server for setup help, ideas and suggestions, signing up as beta tester, or just come by to chat!
-      </p>
-      <p data-t>
-        A special thank you to the wonderful people that have contributed and helped make the optimizer possible:
-      </p>
+      <h1 data-t>Acknowledgements</h1>
+      <p class="thankYouContainer" data-t>Thank you to Fribbels for creating this optimizer and sharing it with the community for free. It has helped countless players gear their favorite heroes, and this copy only continues the work you started.</p>
+      <p data-t>Thanks as well to everyone who helped make the optimizer possible:</p>
       <ul class="thankList">
         <li>
           <p data-t>Marioth - for helping the discord community & keeping the optimizer updated</p>
@@ -2262,6 +2248,9 @@ window.jQuery = $;
         </li>
         <li>
           <p data-t>Beta testers - for helping to find bugs and providing valuable feedback</p>
+        </li>
+        <li>
+          <p data-t>RexQian, Dodaca, Rob6280 and other community contributors - for keeping hero and artifact data updated with each game patch</p>
         </li>
       </ul>
 
