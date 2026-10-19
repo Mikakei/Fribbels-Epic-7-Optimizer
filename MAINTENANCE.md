@@ -1,6 +1,18 @@
 # 本地维护版说明（v1.11.0）
 
-本目录是 [fribbels/Fribbels-Epic-7-Optimizer](https://github.com/fribbels/Fribbels-Epic-7-Optimizer) 的本地维护分支 `maintenance`，基于上游 main（2026-10-12，#263）。
+本目录是 [fribbels/Fribbels-Epic-7-Optimizer](https://github.com/fribbels/Fribbels-Epic-7-Optimizer) 的维护分支 `maintenance`，基于上游 main（2026-10-12，#263）。
+
+## 仓库与分支
+
+| 远程仓库 | 地址 | 用途 |
+|---|---|---|
+| `origin` | [Mikakei/Fribbels-Epic-7-Optimizer](https://github.com/Mikakei/Fribbels-Epic-7-Optimizer) | 你的 fork。`maintenance` 分支推送到这里 |
+| `upstream` | [fribbels/Fribbels-Epic-7-Optimizer](https://github.com/fribbels/Fribbels-Epic-7-Optimizer) | 原仓库。更新脚本从它的 main 拉取 |
+
+- 本仓库的提交身份是 `Mikakei <65083444+Mikakei@users.noreply.github.com>`（GitHub 隐私邮箱）。
+- 本地有改动时提交，然后运行 `git push`。
+- 合并了原仓库的更新后，同样运行 `git push`，把这些提交同步到 fork。
+- fork 的默认分支仍然是 `main`，内容和原仓库一致。改动都在 `maintenance` 分支上。
 
 ## 为什么要维护
 
