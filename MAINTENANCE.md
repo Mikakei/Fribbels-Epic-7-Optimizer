@@ -23,7 +23,9 @@
 | 去掉用不到的 node-sass（项目里没有 .scss，而且 4.x 无法在 Node 16 上安装） | `package.json`、`yarn.lock` |
 | 版本号改为 1.11.0，更新"新功能"说明 | `app/package.json`、`app/js/lib/updater.js` |
 | 数据兜底：服务器连不上，或者服务器上的数据比 GitHub 上的旧超过 10 分钟时，改用 GitHub 上的数据（见下文） | `app/js/lib/heroData.js` |
-| 一键更新脚本 | `update-optimizer.cmd`、`update-optimizer.ps1` |
+| 一键更新脚本 | `scripts/update-optimizer.cmd`、`scripts/update-optimizer.ps1` |
+| 去掉 Donate、Discord 选项卡和赞助图标；重写"信息"页：说明这是自行维护的版本，附原项目和 Discord 链接，感谢原作者，保留并重新整理原有致谢（中文和繁体中文翻译） | `app/app.html`、`data/locales/zh*/translation.json` |
+| 快捷方式入口、"工具"菜单，程序自己准备运行环境 | `app/main.dev.js`、`scripts/` |
 
 ## 已验证（2026-10-19，在本机）
 
@@ -38,7 +40,44 @@
 
 ## 日常使用
 
-双击 `start-optimizer.cmd`。脚本用的是 `.toolchain` 里的便携 JDK 8，不需要在系统里装 Java。
+### 入口
+
+程序根目录下有三个快捷方式，都用配装器的图标：
+
+| 快捷方式 | 作用 |
+|---|---|
+| **Fribbels 配装器** | 直接启动程序，不弹黑色命令行窗口 |
+| **更新配装器** | 合并原仓库的更新，并按需重新编译（见下文） |
+| **检测导入环境** | 检查自动导入需要的 Python、Npcap、网卡和解码服务器 |
+
+快捷方式由 `scripts\create-shortcuts.ps1` 生成。里面是本机的绝对路径，所以不进 git；挪动程序文件夹后需要重新生成。
+
+想放到桌面或开始菜单，就加上参数运行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\create-shortcuts.ps1 -Desktop -StartMenu
+```
+
+程序菜单栏的 **工具** 里也有这些入口：
+
+- 检查更新…：确认后关闭配装器，在单独的窗口里更新，完成后自动重新打开
+- 检测导入环境
+- 加速器网络诊断
+- 打开维护说明
+- 打开程序文件夹
+
+"信息"页的"检查更新"按钮走同样的更新流程。官方 Release 无法更新这个本地版本。
+
+所有脚本都在 `scripts\` 里：`start-optimizer.cmd`、`update-optimizer.cmd/.ps1`、`check-importer.cmd`、`diagnose-importer.cmd`、`create-shortcuts.ps1`。
+
+### 程序自己准备运行环境
+
+本地版本启动时会自动做两件事，所以快捷方式能直接启动 `electron.exe app`，不需要中间脚本：
+
+- 把 `.toolchain\jdk*\bin` 加进 PATH；
+- 读取 `.toolchain\python-version`（内容是 `3.14`），设置 `PY_PYTHON`。
+
+窗口标题显示 `Fribbels E7 Optimizer v1.11.0`，不再显示 "Electron"。
 
 存档位置：`文档\FribbelsOptimizerSaves\`。
 
@@ -56,12 +95,12 @@
 
 | 项目 | 状态 |
 |---|---|
-| Python 3.14.7 | 已安装。`start-optimizer.cmd` 和 `check-importer.cmd` 都设置了 `PY_PYTHON=3.14`，因为 `py` 默认会选 3.15 rc1 |
+| Python 3.14.7 | 已安装。程序和检测脚本都读取 `.toolchain\python-version`，把 `PY_PYTHON` 设成 3.14，因为 `py` 默认会选 3.15 rc1 |
 | 自带 scapy 2.5.0 | 在 3.14 上导入正常；在没有 Npcap 时，scanner.py 也能正常启动和结束 |
 | Npcap | 已由用户安装（2026-10-19）。重装时从 [npcap.com/#download](https://npcap.com/#download) 下载，需要管理员权限；"Support raw 802.11 traffic" 只有用无线网卡时才需要勾选 |
 | 解码服务器 | 可以访问 |
 
-装好 Npcap 后双击 `check-importer.cmd`，它会列出 scapy 能用的网卡，并检查解码服务器能不能访问。
+装好 Npcap 后运行"检测导入环境"（快捷方式或工具菜单），它会列出 scapy 能用的网卡，并检查解码服务器能不能访问。
 
 ### 支持哪些客户端
 
@@ -84,7 +123,7 @@
 | B. 加速器在本机开代理，把游戏连接转到回环地址的其他端口 | 回环上出现大量非 HTTP/TLS 的 TCP 流量，端口不是 3333 | 能，但需要先弄清游戏协议的特征，才能不靠端口认出游戏流量 |
 | C. 加速器在驱动层直接把数据加密封装进 UDP 隧道 | 只有发往加速节点的大量 UDP | 在电脑上抓不到明文。只能在模拟器内部抓，或者扫描时暂停加速 |
 
-`diagnose-importer.cmd` 用来判断是哪种情况：
+"加速器网络诊断"（工具菜单，或 `scripts\diagnose-importer.cmd`）用来判断是哪种情况：
 
 1. 双击运行。它会抓取所有网卡（包括回环）上的 TCP 和 UDP，运行期间新出现的网卡也会自动加进来。
 2. 打开加速器，打开游戏并进到大厅，然后按回车。
@@ -134,12 +173,16 @@ GitHub API 查不到时间（比如网络问题或超出频率限制）时，照
 
 已在程序里模拟验证过四种情况：正常、服务器数据过期、服务器连不上、GitHub API 返回 403，每种都加载到 391 个英雄。
 
-### 代码更新：双击 `update-optimizer.cmd`
+### 代码更新：工具菜单 → 检查更新，或双击"更新配装器"
 
-先关掉优化器，再运行。脚本会：
+从菜单启动时，程序会自己关闭，更新完再重新打开。直接运行脚本时，要先关掉配装器。
+
+更新来源：有名为 `upstream` 的远程仓库时（fork 之后的设置）用 `upstream/main`，否则用 `origin/main`。也可以用 `-Remote` 指定。
+
+脚本会：
 
 1. 拒绝在程序还开着，或者有未提交改动时运行。
-2. 拉取上游 `origin/main`，列出新提交，然后合并。
+2. 拉取原仓库的 main，列出新提交，然后合并。
 3. 按改动的文件决定后面的步骤：
    - `package.json` 或 `yarn.lock` 变了：重新安装依赖，并重新编译前端。
    - `backend/src`、`backend/pom.xml` 或 `backend.jar` 变了：重新编译 jar，并单独提交一次。
