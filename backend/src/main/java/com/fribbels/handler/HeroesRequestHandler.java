@@ -508,6 +508,11 @@ public class HeroesRequestHandler extends RequestHandler implements HttpHandler 
 
                 final Item dbItem = itemDb.getItemById(previousItem.getId());
 
+                // The item may have been deleted while equipped
+                if (dbItem == null) {
+                    continue;
+                }
+
                 dbItem.setEquippedById(null);
                 dbItem.setEquippedByName(null);
 
@@ -551,6 +556,11 @@ public class HeroesRequestHandler extends RequestHandler implements HttpHandler 
 
                 final Item dbItem = itemDb.getItemById(previousItem.getId());
 
+                // The item may have been deleted while equipped
+                if (dbItem == null) {
+                    continue;
+                }
+
                 dbItem.setEquippedById(null);
                 dbItem.setEquippedByName(null);
 
@@ -581,6 +591,9 @@ public class HeroesRequestHandler extends RequestHandler implements HttpHandler 
                 }
 
                 final Item dbItem = itemDb.getItemById(item.getId());
+                if (dbItem == null) {
+                    continue;
+                }
                 dbItem.setLocked(locked);
             }
         }

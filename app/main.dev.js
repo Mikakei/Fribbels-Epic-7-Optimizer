@@ -100,7 +100,7 @@ export default class AppUpdater {
   constructor() {
     log.transports.file.level = 'info';
     autoUpdater.logger = log;
-    autoUpdater.allowDowngrade = true;
+    autoUpdater.allowDowngrade = false;
     autoUpdater.checkForUpdatesAndNotify();
   }
 }

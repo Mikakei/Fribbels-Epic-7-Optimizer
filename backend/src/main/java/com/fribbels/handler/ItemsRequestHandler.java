@@ -541,6 +541,13 @@ public class ItemsRequestHandler extends RequestHandler implements HttpHandler {
                 continue;
 
             System.out.println("Deleting: " + item);
+
+            // Unequip first so the hero doesn't keep a reference to the deleted item
+            final Hero hero = item.getEquippedById() == null ? null : heroDb.getHeroById(item.getEquippedById());
+            if (hero != null && hero.getEquipment() != null) {
+                hero.getEquipment().values().removeIf(x -> x != null && StringUtils.equals(x.getId(), item.getId()));
+            }
+
             itemDb.deleteItem(item.getId());
         }
 

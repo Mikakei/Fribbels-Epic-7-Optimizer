@@ -1,6 +1,6 @@
 const { ipcRenderer } = require('electron');
 global.ipcRenderer = ipcRenderer;
-const currentVersion = "1.10.0";
+const currentVersion = "1.11.0";
 
 global.TEST = false;
 
@@ -39,12 +39,12 @@ module.exports = {
 
 `
 <h2>
-    New in v1.10.0
+    New in v1.11.0
 </h2>
 <ul class="newFeatures">
-    <li>Added new Riposte and Reversal Sets</li>
-    <li>Added support for defense stat artifacts</li>
-    <li>Fixed various bugs</li>
+    <li>Added new Warfare, Pursuit, Weakening and Fervor Sets</li>
+    <li>Hero and artifact data updates through the 20260918 patch</li>
+    <li>Fixed hero and artifact data not refreshing from the server</li>
 </ul>
 `
         );
