@@ -42,12 +42,35 @@
 
 ## 装备导入需要的额外软件
 
-导入器（Importer）通过抓包读取游戏数据，运行的是 `data/py/scanner.py`，需要你自己安装：
+### 导入器怎么工作
 
-- Python 3（命令行里能运行 `py` 或 `python`）
-- [Npcap](https://npcap.com/)：抓包驱动，需要管理员权限安装
+1. 程序运行 `data/py/scanner.py`，用自带的 scapy 2.5.0 和 Npcap，被动抓取本机所有网卡上 TCP 端口 5222 和 3333 的流量。它不读游戏内存，也不碰游戏进程。
+2. 按"停止扫描"后，抓到的原始数据包（十六进制）会**上传到原作者的 AWS 服务器**（`krivpfvxi0.execute-api.us-west-2.amazonaws.com/dev/getItems`）解码，返回装备和英雄列表。解码程序不开源。
+3. 所以导入功能依赖这台服务器。2026-10-19 检查时它还能正常响应。
 
-这两样都没有放进 `.toolchain`。
+用法是先关掉游戏，点"开始扫描"，再打开游戏进到大厅，然后点"停止扫描"。它抓的是登录时服务器发下来的数据。
+
+### 本机环境（2026-10-19）
+
+| 项目 | 状态 |
+|---|---|
+| Python 3.14.7 | 已安装。`start-optimizer.cmd` 和 `check-importer.cmd` 都设置了 `PY_PYTHON=3.14`，因为 `py` 默认会选 3.15 rc1 |
+| 自带 scapy 2.5.0 | 在 3.14 上导入正常；在没有 Npcap 时，scanner.py 也能正常启动和结束 |
+| Npcap | **未安装**，需要你自己用管理员权限安装：[npcap.com/#download](https://npcap.com/#download)。"Support raw 802.11 traffic" 只有用无线网卡时才需要勾选 |
+| 解码服务器 | 可以访问 |
+
+装好 Npcap 后双击 `check-importer.cmd`，它会列出 scapy 能用的网卡，并检查解码服务器能不能访问。
+
+### 支持哪些客户端
+
+只要游戏流量经过这台电脑的网卡就能抓到：
+
+- **模拟器**（MuMu、BlueStacks 等）：README 正式列出支持。
+- **Google Play Games 电脑版**：README 正式列出支持。
+- **手机**：连接电脑开的热点即可。README 正式列出支持。
+- **STOVE 官方 PC 客户端**：README 没写。issue #233（2025-09）里有两位用户说可以用，作者没有回复，我也没有验证过。
+
+开着 VPN 或代理时可能抓不到，README 建议关掉 VPN。
 
 ## 工具链（`.toolchain/`，不进 git）
 
