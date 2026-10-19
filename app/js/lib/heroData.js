@@ -5,6 +5,12 @@ var eesByName = {};
 var HERO_CACHE = "http://e7-optimizer-game-data.s3-accelerate.amazonaws.com/herodata.json?";
 var ARTIFACT_CACHE = "http://e7-optimizer-game-data.s3-accelerate.amazonaws.com/artifactdata.json?";
 
+// Community data PRs land in this repo first and are synced to the server afterwards
+const GITHUB_REPO = "fribbels/Fribbels-Epic-7-Optimizer";
+// When the GitHub copy is newer than the server copy by more than this, the server sync is treated as stale
+const STALE_MARGIN_MS = 10 * 60 * 1000;
+const FETCH_TIMEOUT_MS = 15000;
+
 function UrlExists(url, cb){
     jQuery.ajax({
         url:      url,
@@ -59,7 +65,7 @@ module.exports = {
                 const heroOverride = JSON.parse(await Files.readFileSync(Files.getDataPath() + "/cache/herodata.json"));
                 heroesByName = heroOverride;
             } else {
-                const heroOverride = await fetchCache(HERO_CACHE);
+                const heroOverride = await fetchLatest(HERO_CACHE, "herodata.json");
                 heroesByName = heroOverride;
             }
             console.warn("HERO OVERRIDES")
@@ -74,7 +80,7 @@ module.exports = {
                 const artifactOverride = JSON.parse(await Files.readFileSync(Files.getDataPath() + "/cache/artifactdata.json"));
                 artifactsByName = artifactOverride;
             } else {
-                const artifactOverride = await fetchCache(ARTIFACT_CACHE);
+                const artifactOverride = await fetchLatest(ARTIFACT_CACHE, "artifactdata.json");
                 artifactsByName = artifactOverride;
             }
             console.warn("ARTIFACT OVERRIDES")
@@ -239,21 +245,83 @@ module.exports = {
     },
 }
 
+// Fetches the server copy, but falls back to the GitHub copy when the server is unreachable or its sync is stale
+async function fetchLatest(url, fileName) {
+    var server = null;
+    try {
+        server = await fetchCache(url);
+    } catch (e) {
+        console.warn("Failed to fetch from server: " + url, e);
+    }
+
+    var githubDate = null;
+    try {
+        githubDate = await fetchGithubCommitDate("data/cache/" + fileName);
+    } catch (e) {
+        console.warn("Failed to read GitHub commit date for " + fileName, e);
+    }
+
+    const serverStale = !server || (githubDate && server.lastModified && githubDate - server.lastModified > STALE_MARGIN_MS);
+    if (serverStale) {
+        try {
+            const github = await fetchCache(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/data/cache/${fileName}`);
+            console.warn(`Using GitHub copy of ${fileName}: server ${server ? new Date(server.lastModified).toISOString() : "unavailable"}, GitHub ${new Date(githubDate).toISOString()}`);
+            return github.json;
+        } catch (e) {
+            console.warn("Failed to fetch GitHub copy of " + fileName, e);
+        }
+    }
+
+    if (server) {
+        return server.json;
+    }
+    throw new Error("Unable to fetch " + fileName);
+}
+
+async function fetchGithubCommitDate(path) {
+    const response = await fetchWithTimeout(`https://api.github.com/repos/${GITHUB_REPO}/commits?path=${path}&sha=main&per_page=1`, {});
+    if (!response.ok) {
+        throw new Error("GitHub API returned " + response.status);
+    }
+    const commits = await response.json();
+    if (!commits.length) {
+        return null;
+    }
+    return Date.parse(commits[0].commit.committer.date);
+}
+
 async function fetchCache(url) {
     console.log("Fetching from url: " + url);
     var myHeaders = new Headers();
     myHeaders.append('pragma', 'no-cache');
     myHeaders.append('cache-control', 'no-cache');
 
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
         method: 'GET',
         headers: myHeaders,
     });
+    if (!response.ok) {
+        throw new Error("Fetch returned " + response.status + " for " + url);
+    }
     const text = await response.text();
     const json = JSON.parse(text);
     console.log("Finished fetching from url: " + url);
 
-    return json;
+    const lastModified = Date.parse(response.headers.get('last-modified'));
+    return {
+        json: json,
+        lastModified: isNaN(lastModified) ? null : lastModified
+    };
+}
+
+async function fetchWithTimeout(url, options) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    try {
+        return await fetch(url, Object.assign({}, options, {signal: controller.signal}));
+    } finally {
+        clearTimeout(timer);
+    }
 }
 
 function manualFetchData() {
