@@ -27,7 +27,7 @@ function Step([string]$message) {
     Write-Host "== $message" -ForegroundColor Cyan
 }
 
-function Git {
+function Invoke-Git {
     $output = & git -C $Root @args
     if ($LASTEXITCODE -ne 0) { Fail "git $($args -join ' ') failed" }
     return $output
@@ -44,7 +44,7 @@ $running = Get-CimInstance Win32_Process | Where-Object {
 }
 if ($running) { Fail "The optimizer is running. Close it and run the update again." }
 
-if (Git status --porcelain --untracked-files=no) {
+if (Invoke-Git status --porcelain --untracked-files=no) {
     Fail "There are uncommitted changes. Commit or discard them first (git status)."
 }
 
@@ -52,7 +52,7 @@ Step "Fetching $Remote/$Branch"
 & git -C $Root fetch $Remote $Branch
 if ($LASTEXITCODE -ne 0) { Fail "git fetch failed. Check the network connection to GitHub." }
 
-$incoming = Git log --oneline "HEAD..$Remote/$Branch"
+$incoming = Invoke-Git log --oneline "HEAD..$Remote/$Branch"
 if (-not $incoming) {
     Write-Host "Already up to date."
     exit 0
@@ -60,19 +60,19 @@ if (-not $incoming) {
 Write-Host "Incoming upstream commits:"
 $incoming | ForEach-Object { Write-Host "  $_" }
 
-$before = (Git rev-parse HEAD) | Select-Object -First 1
+$before = (Invoke-Git rev-parse HEAD) | Select-Object -First 1
 $rebuildBackend = $false
 
 Step "Merging"
 & git -C $Root merge --no-edit "$Remote/$Branch"
 if ($LASTEXITCODE -ne 0) {
-    $conflicts = @(Git diff --name-only --diff-filter=U)
+    $conflicts = @(Invoke-Git diff --name-only --diff-filter=U)
     if ($conflicts.Count -eq 1 -and $conflicts[0] -eq $Jar) {
         # Both sides changed the binary jar; it is rebuilt from the merged source below anyway
         Write-Host "Only $Jar conflicted; it will be rebuilt from the merged source."
-        Git checkout --theirs -- $Jar | Out-Null
-        Git add -- $Jar | Out-Null
-        Git commit --no-edit | Out-Null
+        Invoke-Git checkout --theirs -- $Jar | Out-Null
+        Invoke-Git add -- $Jar | Out-Null
+        Invoke-Git commit --no-edit | Out-Null
         $rebuildBackend = $true
     } else {
         & git -C $Root merge --abort
@@ -80,7 +80,7 @@ if ($LASTEXITCODE -ne 0) {
     }
 }
 
-$changed = @(Git diff --name-only $before HEAD)
+$changed = @(Invoke-Git diff --name-only $before HEAD)
 $needDeps = [bool]($changed | Where-Object { $_ -match '^(app/)?(package\.json|yarn\.lock)$' })
 $rebuildBackend = $rebuildBackend -or [bool]($changed | Where-Object { $_ -match '^backend/(src/|pom\.xml)' -or $_ -eq $Jar })
 $needAppBuild = $needDeps -or [bool]($changed | Where-Object { $_ -match '^(app|configs|internals)/' -and $_ -notmatch '^app/(js|assets|css|locales)/' })
@@ -93,9 +93,9 @@ if ($needDeps) {
     $code = $LASTEXITCODE
     Pop-Location
     if ($code -ne 0) { Fail "yarn install failed" }
-    if (Git status --porcelain --untracked-files=no -- yarn.lock app/yarn.lock) {
-        Git add -- yarn.lock app/yarn.lock | Out-Null
-        Git commit -m "Update yarn.lock after merging upstream" | Out-Null
+    if (Invoke-Git status --porcelain --untracked-files=no -- yarn.lock app/yarn.lock) {
+        Invoke-Git add -- yarn.lock app/yarn.lock | Out-Null
+        Invoke-Git commit -m "Update yarn.lock after merging upstream" | Out-Null
     }
 }
 
@@ -107,9 +107,9 @@ if ($rebuildBackend) {
     Pop-Location
     if ($code -ne 0) { Fail "Maven build failed" }
     Copy-Item -Force (Join-Path $Root 'backend\target\backend.jar') (Join-Path $Root $Jar)
-    if (Git status --porcelain --untracked-files=no -- $Jar) {
-        Git add -- $Jar | Out-Null
-        Git commit -m "Rebuild backend.jar after merging upstream" | Out-Null
+    if (Invoke-Git status --porcelain --untracked-files=no -- $Jar) {
+        Invoke-Git add -- $Jar | Out-Null
+        Invoke-Git commit -m "Rebuild backend.jar after merging upstream" | Out-Null
     }
 }
 
