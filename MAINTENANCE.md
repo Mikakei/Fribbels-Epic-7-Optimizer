@@ -94,6 +94,18 @@
 
 已在本机用模拟流量验证过三种提示：游戏端口有流量、回环代理、UDP 隧道。"运行中新出现的网卡"这一点没有测过，因为本机没有能临时创建网卡的加速器。
 
+**发给玩家的诊断包：** 运行 `powershell -ExecutionPolicy Bypass -File tools\package-diagnose.ps1`，会生成 `release\FribbelsImporterDiagnose-日期.zip`，约 1.4 MB，不进 git。包里只有以下文件：
+
+- `run-diagnose.cmd`：自动找 `py -3` 或 `python`，报告写到包内的 `reports` 文件夹
+- `diagnose_capture.py`
+- 自带的 scapy（不含 `__pycache__`）
+- `README.txt`：中文使用说明，要求玩家附上加速器名称、模式和客户端类型
+- `LICENSE-scapy.txt`
+
+玩家电脑上需要装有 Python 3 和 Npcap。用过自动导入的电脑都已经装好了。
+
+包的源文件在 `tools/diagnose-package/`。已解压测试过：能找到 Python，用的是包内的 scapy，能写出报告；没有 Npcap 时会给出中英文提示。
+
 ## 工具链（`.toolchain/`，不进 git）
 
 | 工具 | 版本 | 用途 |

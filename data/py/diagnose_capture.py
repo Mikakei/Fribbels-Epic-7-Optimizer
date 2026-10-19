@@ -166,18 +166,26 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--seconds", type=int, default=0, help="stop after this many seconds instead of on Enter")
     parser.add_argument("--out", default="", help="report path (default: Documents\\FribbelsOptimizerSaves)")
+    parser.add_argument("--out-dir", default="", help="folder for the report, named by time")
     args = parser.parse_args()
 
     start_new_interfaces()
+    capturing = sum(1 for s in sniffers.values() if s)
+    if not capturing:
+        print("No network interface can be captured. Install Npcap from https://npcap.com/#download and try again.")
+        print("没有可以抓包的网卡。请先安装 Npcap（https://npcap.com/#download）再运行。")
+        sys.exit(1)
     stop = threading.Event()
     threading.Thread(target=watch_interfaces, args=(stop,), daemon=True).start()
 
-    print("Capturing on {} interfaces.".format(sum(1 for s in sniffers.values() if s)))
+    print("Capturing on {} interfaces. / 正在抓取 {} 块网卡。".format(capturing, capturing))
     if args.seconds:
         time.sleep(args.seconds)
     else:
         print("Now start the accelerator if you use one, open Epic Seven and log into the lobby.")
         print("Press Enter when you are in the lobby (stops automatically after 5 minutes).")
+        print("现在打开加速器（如果你用的话），启动第七史诗并进入大厅。")
+        print("进入大厅后按回车（5 分钟后会自动结束）。")
         done = threading.Event()
         threading.Thread(target=lambda: (sys.stdin.readline(), done.set()), daemon=True).start()
         done.wait(300)
@@ -193,7 +201,7 @@ def main():
 
     out = args.out
     if not out:
-        folder = os.path.join(documents_folder(), "FribbelsOptimizerSaves")
+        folder = args.out_dir or os.path.join(documents_folder(), "FribbelsOptimizerSaves")
         os.makedirs(folder, exist_ok=True)
         out = os.path.join(folder, "importer-diagnose-{}.txt".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S")))
     report = build_report(duration)
@@ -201,7 +209,7 @@ def main():
         f.write(report)
     print()
     print(report[report.index("== Hints"):report.index("== TCP connections")])
-    print("Report saved to: " + out)
+    print("Report saved to / 报告已保存到: " + out)
 
 
 if __name__ == "__main__":
