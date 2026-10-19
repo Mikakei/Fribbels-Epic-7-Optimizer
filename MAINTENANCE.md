@@ -12,7 +12,7 @@
 - 本仓库的提交身份是 `Mikakei <65083444+Mikakei@users.noreply.github.com>`（GitHub 隐私邮箱）。
 - 本地有改动时提交，然后运行 `git push`。
 - 合并了原仓库的更新后，同样运行 `git push`，把这些提交同步到 fork。
-- fork 的默认分支仍然是 `main`，内容和原仓库一致。改动都在 `maintenance` 分支上。
+- fork 的默认分支是 `maintenance`（2026-10-19 设置），打开仓库首页就是维护版。`main` 是 fork 时原仓库 main 的副本，只在 GitHub 上点 Sync fork 时才会更新。
 
 ## 为什么要维护
 
