@@ -22,6 +22,8 @@
 | 修复：在装备页删除已穿戴的装备后，英雄仍然引用这件装备，之后删除、卸下或锁定这个英雄时后端报错（NullPointerException） | `backend/.../ItemsRequestHandler.java`、`HeroesRequestHandler.java` |
 | 去掉用不到的 node-sass（项目里没有 .scss，而且 4.x 无法在 Node 16 上安装） | `package.json`、`yarn.lock` |
 | 版本号改为 1.11.0，更新"新功能"说明 | `app/package.json`、`app/js/lib/updater.js` |
+| 数据兜底：服务器连不上，或者服务器上的数据比 GitHub 上的旧超过 10 分钟时，改用 GitHub 上的数据（见下文） | `app/js/lib/heroData.js` |
+| 一键更新脚本 | `update-optimizer.cmd`、`update-optimizer.ps1` |
 
 ## 已验证（2026-10-19，在本机）
 
@@ -62,9 +64,39 @@
 
 社区一般在游戏补丁后一两周内合并数据 PR。
 
-**英雄和神器数据**由程序启动时从 S3 自动拉取，不需要做任何事。
+### 英雄和神器数据：自动，重启程序即可
 
-**代码有更新时：**
+程序每次启动时按下面的顺序取数据：
+
+1. 下载服务器上的 `herodata.json` 和 `artifactdata.json`，通常是 S3，S3 不可用时换成 Azure 镜像。同时记下文件的 `Last-Modified` 时间。
+2. 查询 GitHub 上这两个文件最后一次提交的时间（`api.github.com`）。
+3. 如果服务器连不上，或者 GitHub 上的提交比服务器文件新 10 分钟以上，说明原作者那边的同步停了，就改用 `raw.githubusercontent.com` 上 main 分支的版本。
+4. 都失败时，用本地 `data/cache/` 里的副本。
+
+GitHub API 查不到时间（比如网络问题或超出频率限制）时，照常使用服务器上的数据。每个请求 15 秒超时，不会卡住启动。用了 GitHub 副本时，开发者工具的控制台会打印 `Using GitHub copy of ...`。
+
+已在程序里模拟验证过四种情况：正常、服务器数据过期、服务器连不上、GitHub API 返回 403，每种都加载到 391 个英雄。
+
+### 代码更新：双击 `update-optimizer.cmd`
+
+先关掉优化器，再运行。脚本会：
+
+1. 拒绝在程序还开着，或者有未提交改动时运行。
+2. 拉取上游 `origin/main`，列出新提交，然后合并。
+3. 按改动的文件决定后面的步骤：
+   - `package.json` 或 `yarn.lock` 变了：重新安装依赖，并重新编译前端。
+   - `backend/src`、`backend/pom.xml` 或 `backend.jar` 变了：重新编译 jar，并单独提交一次。
+   - `app/`、`configs/` 或 `internals/` 里，除 `app/js`、`assets`、`css`、`locales` 以外的文件变了：运行 `yarn build`。`app/js` 是直接加载的，不需要编译。
+   - 只有 `data/` 变了：什么都不用做。
+4. 如果只有 `backend.jar` 冲突（上游也提交了一份 jar），会自动用合并后的源码重新编译来解决。其他冲突会撤销这次合并，并列出冲突的文件，需要手动处理。
+5. 某一步失败时，会把没完成的步骤记在 `.git/fribbels-update-pending` 里，下次运行先补做，即使上游没有新提交也一样。
+6. 最后检查上游有没有把 `global.TEST = true` 或 `allowDowngrade = true` 加回来，有就给出警告。
+
+已在临时副本里用伪造的上游提交测过：无更新、后端改动、jar 冲突、编译失败后补做、有未提交改动时拒绝运行、程序开着时拒绝运行。
+
+### 手动更新
+
+不用脚本时，步骤如下：
 
 ```bash
 git fetch origin
