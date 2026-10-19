@@ -65,6 +65,8 @@ module.exports = {
             if (lang != 'en') {
                 text.forEach(
                     function(currentValue, currentIndex, listObj) {
+                      // One element that fails to translate must not leave the rest of the page untranslated
+                      try {
                         // console.log(currentValue.nodeName);
                         let tmpText = {untransString: []};
                         if (['LABEL', 'A', 'TEXT', 'H1', 'H2', 'H3', 'U', 'B', 'DIV', 'SPAN', 'OPTION', 'BUTTON'].includes(currentValue.nodeName)) {
@@ -79,7 +81,7 @@ module.exports = {
                                 const trimedDatacontent = datacontent.trim();
                                 const transText = i18next.t(datacontent.trim());
                                 if(transText === trimedDatacontent){
-                                    tmpText.push(trimedDatacontent);
+                                    tmpText.untransString.push(trimedDatacontent);
                                 }
                                 currentValue.setAttribute("data-content", i18next.t(datacontent.trim()));
                             }
@@ -111,6 +113,9 @@ module.exports = {
                         if(tmpText.untransString.length !== 0){
                             untransTexts.push(tmpText);
                         }
+                      } catch (e) {
+                        console.warn("Unable to translate element", currentValue, e);
+                      }
                     });
                     console.log("there has untranslated strings in data-t type", untransTexts);
             } else {

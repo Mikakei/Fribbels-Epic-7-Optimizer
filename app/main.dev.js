@@ -13,6 +13,7 @@ import 'regenerator-runtime/runtime';
 import path from 'path';
 import fs from 'fs';
 import { spawn } from 'child_process';
+import https from 'https';
 import { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
@@ -22,26 +23,31 @@ const remoteMain = require("@electron/remote/main");
 const isMac = process.platform === 'darwin'
 var closed = false;
 
-// Locally built copy (see MAINTENANCE.md): repo root holding .toolchain and scripts
-const ROOT_PATH = path.resolve(__dirname, '..');
+// This maintained copy publishes its own releases; the official ones would replace its fixes
+const RELEASES_REPO = 'Mikakei/Fribbels-Epic-7-Optimizer';
+
+// Root holding data/ and scripts/: the exe folder of the portable zip, or the repo root of a local build (see MAINTENANCE.md)
+const ROOT_PATH = app.isPackaged ? path.dirname(app.getPath('exe')) : path.resolve(__dirname, '..');
 const SCRIPTS_PATH = path.join(ROOT_PATH, 'scripts');
 const isLocalBuild = !app.isPackaged && fs.existsSync(SCRIPTS_PATH);
+const hasScript = (name) => fs.existsSync(path.join(SCRIPTS_PATH, name));
 
-// Use the portable JDK and the pinned Python version from .toolchain, so the app can be started directly from a shortcut
-if (isLocalBuild) {
+// Use the Java bundled in the portable zip (jre/) or the local build's .toolchain JDK, so no system Java is needed
+try {
   const toolchain = path.join(ROOT_PATH, '.toolchain');
-  try {
-    const jdk = fs.readdirSync(toolchain).find(x => x.startsWith('jdk'));
-    if (jdk) {
-      process.env.PATH = path.join(toolchain, jdk, 'bin') + path.delimiter + process.env.PATH;
-    }
-    const pythonVersionFile = path.join(toolchain, 'python-version');
-    if (!process.env.PY_PYTHON && fs.existsSync(pythonVersionFile)) {
-      process.env.PY_PYTHON = fs.readFileSync(pythonVersionFile, 'utf8').trim();
-    }
-  } catch (e) {
-    console.log("No local toolchain found", e);
+  const localJdk = isLocalBuild && fs.existsSync(toolchain) ? fs.readdirSync(toolchain).find(x => x.startsWith('jdk')) : null;
+  const javaBin = [path.join(ROOT_PATH, 'jre', 'bin'), localJdk && path.join(toolchain, localJdk, 'bin')]
+    .find(dir => dir && fs.existsSync(path.join(dir, 'java.exe')));
+  if (javaBin) {
+    process.env.PATH = javaBin + path.delimiter + process.env.PATH;
   }
+  // Local build only: pin the Python version the importer runs with
+  const pythonVersionFile = path.join(toolchain, 'python-version');
+  if (isLocalBuild && !process.env.PY_PYTHON && fs.existsSync(pythonVersionFile)) {
+    process.env.PY_PYTHON = fs.readFileSync(pythonVersionFile, 'utf8').trim();
+  }
+} catch (e) {
+  console.log("Unable to set up bundled Java", e);
 }
 
 const appVersion = (() => {
@@ -77,31 +83,77 @@ async function confirmLocalUpdate() {
   mainWindow.close();
 }
 
+function getJson(url) {
+  return new Promise((resolve, reject) => {
+    const request = https.get(url, { headers: { 'User-Agent': 'FribbelsE7Optimizer', 'Accept': 'application/vnd.github+json' } }, (response) => {
+      let body = '';
+      response.on('data', (chunk) => body += chunk);
+      response.on('end', () => {
+        if (response.statusCode !== 200) return reject(new Error('HTTP ' + response.statusCode));
+        try { resolve(JSON.parse(body)); } catch (e) { reject(e); }
+      });
+    });
+    request.setTimeout(15000, () => request.destroy(new Error('timeout')));
+    request.on('error', reject);
+  });
+}
+
+function isNewerVersion(latest, current) {
+  const parse = (v) => String(v).replace(/^v/, '').split(/[.-]/).slice(0, 3).map(x => parseInt(x, 10) || 0);
+  const a = parse(latest), b = parse(current);
+  for (let i = 0; i < 3; i++) {
+    if (a[i] !== b[i]) return a[i] > b[i];
+  }
+  return false;
+}
+
+// Portable zip: look up the latest release of this maintained copy and offer its download page
+async function checkReleaseUpdate() {
+  const releasesPage = `https://github.com/${RELEASES_REPO}/releases`;
+  try {
+    const latest = await getJson(`https://api.github.com/repos/${RELEASES_REPO}/releases/latest`);
+    if (isNewerVersion(latest.tag_name, appVersion)) {
+      const result = await dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        buttons: ['打开下载页面', '以后再说'],
+        defaultId: 0,
+        cancelId: 1,
+        title: '检查更新',
+        message: `有新版本 ${latest.tag_name}`,
+        detail: `当前版本 v${appVersion}。下载新的压缩包，解压后覆盖或替换原来的程序文件夹即可，存档在"文档\\FribbelsOptimizerSaves"里，不受影响。`
+      });
+      if (result.response === 0) shell.openExternal(latest.html_url || releasesPage);
+    } else {
+      await dialog.showMessageBox(mainWindow, { type: 'info', title: '检查更新', message: `已经是最新版本 v${appVersion}` });
+    }
+  } catch (e) {
+    const result = await dialog.showMessageBox(mainWindow, {
+      type: 'warning',
+      buttons: ['打开下载页面', '关闭'],
+      defaultId: 0,
+      cancelId: 1,
+      title: '检查更新',
+      message: '无法连接 GitHub 检查更新',
+      detail: String(e.message || e)
+    });
+    if (result.response === 0) shell.openExternal(releasesPage);
+  }
+}
+
+const checkForUpdates = () => isLocalBuild ? confirmLocalUpdate() : checkReleaseUpdate();
+
 const toolsMenu = {
   label: '工具',
   submenu: [
-    {
-      label: '检查更新…',
-      click: confirmLocalUpdate
-    },
-    {
-      label: '检测导入环境',
-      click: () => runScript('check-importer.cmd')
-    },
-    {
-      label: '加速器网络诊断',
-      click: () => runScript('diagnose-importer.cmd')
-    },
+    { label: '检查更新…', click: checkForUpdates },
+    hasScript('check-importer.cmd') && { label: '检测导入环境', click: () => runScript('check-importer.cmd') },
+    hasScript('diagnose-importer.cmd') && { label: '加速器网络诊断', click: () => runScript('diagnose-importer.cmd') },
     { type: 'separator' },
-    {
-      label: '打开维护说明',
-      click: () => shell.openPath(path.join(ROOT_PATH, 'MAINTENANCE.md'))
-    },
-    {
-      label: '打开程序文件夹',
-      click: () => shell.openPath(ROOT_PATH)
-    }
-  ]
+    isLocalBuild
+      ? { label: '打开维护说明', click: () => shell.openPath(path.join(ROOT_PATH, 'MAINTENANCE.md')) }
+      : { label: '使用说明（GitHub）', click: () => shell.openExternal(`https://github.com/${RELEASES_REPO}/blob/maintenance/README.zh-CN.md`) },
+    { label: '打开程序文件夹', click: () => shell.openPath(ROOT_PATH) }
+  ].filter(Boolean)
 };
 
 // Match build.appId
@@ -177,7 +229,7 @@ const template = [
    }
 ]
 
-if (isLocalBuild) {
+if (isLocalBuild || app.isPackaged) {
   // Before Help
   template.splice(template.length - 1, 0, toolsMenu);
 }
@@ -306,24 +358,13 @@ const createWindow = async () => {
     }
   });
 
-  mainWindow.once("ready-to-show", () => {
-    autoUpdater.checkForUpdatesAndNotify();
-  });
 
 
   // const menuBuilder = new MenuBuilder(mainWindow);
   // menuBuilder.buildMenu();
 
-  // Remove this if your app does not use auto updates
-  // eslint-disable-next-line
-
-  new AppUpdater();
-
-  require('update-electron-app')({
-    repo: 'fribbels/Fribbels-Epic-7-Optimizer',
-    updateInterval: '5 minutes',
-    // logger: require('electron-log')
-  })
+  // The official auto-updaters (electron-updater, update-electron-app) are off: they would replace this maintained
+  // copy with the official release. Updates go through checkForUpdates() instead.
 };
 
 /**
@@ -364,14 +405,8 @@ ipcMain.on('test', async (event) => {
 });
 
 ipcMain.on('check', async (event) => {
-  // The official releases can't update a local build; use the update script instead
-  if (isLocalBuild) {
-    await confirmLocalUpdate();
-    return;
-  }
-  const updates = await autoUpdater.checkForUpdatesAndNotify()
-  console.log(updates)
-  event.sender.send('check', updates);
+  // Information tab's update button: this copy's own update flow instead of the official releases
+  await checkForUpdates();
 });
 
 ipcMain.on('restart_app', () => {

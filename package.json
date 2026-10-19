@@ -125,7 +125,7 @@
     ],
     "publish": {
       "provider": "github",
-      "owner": "fribbels",
+      "owner": "Mikakei",
       "repo": "Fribbels-Epic-7-Optimizer",
       "private": false
     }

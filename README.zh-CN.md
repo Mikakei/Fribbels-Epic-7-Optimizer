@@ -11,7 +11,9 @@
 - 修复删除已穿戴的装备后，再删除、卸下或锁定该英雄时报错的问题
 - 去掉赞助入口，"信息"页改为维护说明；增加检查更新、导入环境检测和加速器网络诊断工具
 
-目前没有安装包。下文"[安装](#安装)"一节里的 Releases 是原作者的官方版本（最新为 v1.10.0），不包含以上修复。这个版本的改动和运行方法见 [MAINTENANCE.md](MAINTENANCE.md)。
+**下载：** 到 [Releases](https://github.com/Mikakei/Fribbels-Epic-7-Optimizer/releases) 下载 `FribbelsE7Optimizer-<版本>-win-x64.zip`，解压后运行 `FribbelsE7Optimizer.exe`。压缩包自带 Java，不需要另外安装。详见"[安装](#安装)"一节。
+
+想从源码运行或参与维护，请看 [MAINTENANCE.md](MAINTENANCE.md)。
 
 感谢原作者 Fribbels 创造了这个配装器，也感谢一直补充英雄和神器数据的社区贡献者。
 
@@ -38,10 +40,11 @@ _________________
 ![](https://i.imgur.com/vQ3tnol.png)
 
 ## 系统要求
-- 64 位 Windows 或 macOS
-- 已安装 64 位 Java 8 或更高版本（如果还没有，请从 https://java.com/en/download/manual.jsp 下载；Windows 请选 "Windows Offline (64-bit)" 安装包）
+- 64 位 Windows 10/11。维护版的压缩包自带 Java，不需要另外安装
+- 使用自动导入时，还需要 Python 3 和 Npcap，见"[设置自动导入](#设置自动导入)"
+- 维护版只提供 Windows 版本。macOS 用户请使用原作者的官方版本（见"[macOS](#macos)"），它不包含维护版的修复
 
-安装步骤的视频教程：https://www.youtube.com/watch?v=bDjP5eiOfK0
+原作者的安装视频教程（演示的是官方版本，界面和步骤基本相同）：https://www.youtube.com/watch?v=bDjP5eiOfK0
 
 _________________
 
@@ -286,19 +289,21 @@ _________________
 
 ### 安装
 
-> 注意：这一节说的是原作者的官方版本。它不包含[这个维护版本](#关于这个维护版本)的修复。
-
 #### Windows
 
-需要 64 位 Java 8 或更高版本：
+1. 到维护版的 [Releases](https://github.com/Mikakei/Fribbels-Epic-7-Optimizer/releases) 页面，下载最新版本里的 ``FribbelsE7Optimizer-<版本>-win-x64.zip``
+    * 不要下载 Source code，那些用不了
+2. 把压缩包解压到任意文件夹，例如 ``D:\FribbelsE7Optimizer``
+3. 双击文件夹里的 ``FribbelsE7Optimizer.exe`` 启动
+    * 压缩包自带 Java，不需要另外安装
+    * 如果 Windows 提示"Windows 已保护你的电脑"，点"更多信息"，再点"仍要运行"。程序没有数字签名，所以会有这个提示
+4. 想用自动导入的话，按下面的步骤设置
 
-1. 安装 **64 位 Java 8**：https://java.com/en/download/manual.jsp ，选 Windows Offline (64-bit) 安装包
-    * 安装完必须重启电脑！
-2. 在 [Releases](https://github.com/fribbels/Fribbels-Epic-7-Optimizer/releases) 页面选择最新版本，下载类似 ``FribbelsE7Optimizer-Setup-1.x.x.exe`` 的文件，然后运行安装
-    * 不要下载 Source Code，那些用不了
-3. 按下面的步骤设置自动导入
+**更新：** 菜单"工具 → 检查更新"会检查有没有新版本。有的话，下载新的压缩包，用解压出来的新文件夹替换旧的即可。存档保存在"文档\FribbelsOptimizerSaves"里，不受影响。
 
 #### macOS
+
+> 维护版没有 macOS 版本，下面是原作者官方版本（最新 v1.10.0）的安装方法，它不包含[维护版的修复](#关于这个维护版本)。
 
 1. 在 [Releases](https://github.com/fribbels/Fribbels-Epic-7-Optimizer/releases) 页面选择最新版本，下载类似 ``FribbelsE7Optimizer-x.x.x-mac.dmg`` 的文件
     * 不要下载 Source Code，那些用不了
@@ -319,9 +324,10 @@ _________________
 
 可以跟着视频教程一步步做：https://youtu.be/bDjP5eiOfK0?t=182
 
-1. 安装 [Python 3.4 或更高版本](https://www.python.org/downloads/release/python-392/)，选 Windows 64 位安装包。[3.9.2 直接下载链接](https://www.python.org/ftp/python/3.9.2/python-3.9.2-amd64.exe)。**重要：安装时勾选 "Add Python to PATH"**
-2. 安装 Windows 版 [Npcap](https://nmap.org/npcap/#download)。[直接下载链接](https://nmap.org/npcap/dist/npcap-1.31.exe)。安装时勾选 "Support raw 802.11 traffic (and monitor mode) for wireless adapters"
+1. 安装 [Python 3](https://www.python.org/downloads/)，选 Windows 64 位安装包。**重要：安装时勾选 "Add Python to PATH"**
+2. 安装 [Npcap](https://npcap.com/#download)，需要管理员权限。用无线网卡上网的话，安装时勾选 "Support raw 802.11 traffic (and monitor mode) for wireless adapters"
 3. 重启电脑
+4. 打开配装器，在菜单"工具 → 检测导入环境"里确认每一项都是 √
 
 #### Mac 首次设置
 
@@ -398,9 +404,13 @@ _________________
 ## 常见问题
 
 ### 自动导入的问题
+* 先在菜单"工具 → 检测导入环境"里检查，每一项都应该是 √，没通过的项会给出处理提示。
 * 超过 30 秒还没有结果，也没有报错：
   * 确认已经安装了需要的软件（Windows 需要 Python 和 Npcap，Mac 需要 Python 和 Wireshark），或者尝试重新安装。
   * 重启电脑
+* 开着加速器时抓不到数据：
+  * 用菜单"工具 → 加速器网络诊断"查看游戏数据走了哪条路。它只在本机运行，不上传任何东西。
+  * 加速器运行在模拟器里面（安卓加速器应用）时，数据在模拟器内部就被加密了，电脑上抓不到。可以改用电脑版加速器的"模拟器加速"，或者扫描的那几十秒暂停加速。
 * 出现报错：
   * 多试几次，偶尔会失败
   * 如果开着 VPN，关掉它，或者把加密方式改成 UDP
@@ -412,12 +422,14 @@ _________________
 ### 配装器的问题
 
 - 遇到 Java 相关的问题：
-  - 确认安装了 64 位 Java 8。
-  - 确认 Java 在 PATH 环境变量里：https://mkyong.com/java/how-to-set-java_home-on-windows-10/
-  - 重启电脑后再打开程序（可能有旧的后台进程还在运行）
+  - 维护版的压缩包自带 Java（程序文件夹里的 ``jre``），一般不会遇到。如果遇到，确认压缩包完整解压了，``jre`` 文件夹还在。
+  - 重启电脑后再打开程序（可能有旧的后台进程还在运行）。
+  - 使用原作者的官方版本时，需要自己安装 64 位 Java 8，并确认 Java 在 PATH 环境变量里：https://mkyong.com/java/how-to-set-java_home-on-windows-10/
 
 - 下载后无法运行程序：
-  - 你可能下载的是 Source code，不是安装包。到 https://github.com/fribbels/Fribbels-Epic-7-Optimizer/releases 下载 "FribbelsE7Optimizer-Setup-1.x.x.exe"（Windows；Mac 请下载 dmg），不要下载 Source code
+  - 你可能下载的是 Source code。到 https://github.com/Mikakei/Fribbels-Epic-7-Optimizer/releases 下载 ``FribbelsE7Optimizer-<版本>-win-x64.zip``，不要下载 Source code。
+  - 不要直接在压缩包里运行，先完整解压到一个文件夹。
+  - Windows 提示"Windows 已保护你的电脑"时，点"更多信息"，再点"仍要运行"。
 
 - 导入时弹出 "Error: EPERM: operation not permitted"，有几种可能的解决办法：
   - 重启电脑，特别是最近刚装过 Java 的话
@@ -426,9 +438,6 @@ _________________
   - 以管理员身份运行程序
   - 把程序文件夹移到别的位置
   - 关闭 Windows 安全中心的勒索软件防护（受控文件夹访问）：https://www.majorgeeks.com/content/page/how_to_enable_or_disable_windows_defender_exploit_guard_controlled_folder_access.html
-
-- 报错信息里有 "Current relative path is C:\Windows\system32..."：
-  - 我不清楚具体原因，但有一个办法可以解决：把 data/tessdata/eng.traineddata/eng.traineddata 文件复制到它要找的 system32 路径里
 
 - 在 Mac 上提示 "The application "FribbelsE7Optimizer" can't be opened"：
   - 右键点击程序，在菜单里选"打开"

@@ -11,7 +11,7 @@
 > - Fixed an error when removing, unequipping or locking a hero after deleting gear they had equipped
 > - Removed the donation links, rewrote the Information tab, and added update, importer check and network diagnostic tools
 >
-> There is no installer for this copy yet. The Releases linked in [Installing the app](#installing-the-app) are the original author's official builds (latest v1.10.0) and do not include these fixes. See [MAINTENANCE.md](MAINTENANCE.md) (Chinese) for the changes and how to run this copy.
+> **Download:** get `FribbelsE7Optimizer-<version>-win-x64.zip` from [Releases](https://github.com/Mikakei/Fribbels-Epic-7-Optimizer/releases), extract it and run `FribbelsE7Optimizer.exe`. Java is included. See [Installing the app](#installing-the-app). To run from source or help maintain it, see [MAINTENANCE.md](MAINTENANCE.md) (Chinese).
 >
 > Thank you to Fribbels for creating the optimizer, and to the community contributors who keep the hero and artifact data updated. The rest of this README is the original author's documentation.
 
@@ -34,8 +34,9 @@ Here's what it looks like currently:
 ![](https://i.imgur.com/vQ3tnol.png)
 
 ## Requirements
-- 64-bit Windows or MacOS
-- Java 8+, 64-Bit installed (Please download if you don't yet have it: https://java.com/en/download/manual.jsp. For Windows, use the 'Windows Offline (64-bit)' installer)
+- 64-bit Windows 10/11. The maintained copy's zip includes Java, so there's nothing else to install
+- Python 3 and Npcap for the automatic importer, see [Setting up the auto importer](#setting-up-the-auto-importer)
+- The maintained copy is Windows only. On macOS, use the original author's official build (see [Mac OS](#mac-os)), which does not include its fixes
 
 Check out the step-by-step video guide on how to install the app: https://www.youtube.com/watch?v=bDjP5eiOfK0
 
@@ -74,7 +75,6 @@ _________________
     + [Automatic importer troubleshooting](#automatic-importer-troubleshooting)
     + [Optimizer troubleshooting](#optimizer-troubleshooting)
   * [Contributing to the project](#contributing-to-the-project)
-    + [Setup steps](#setup-steps)
 
 ## Optimizer Tab
 
@@ -282,15 +282,19 @@ Please read these instructions carefully! Here is a step by step video guide to 
 
 #### Windows
 
-64 bit Java 8 or above is required:
-
-1. Install **Java 8 - 64 bit** https://java.com/en/download/manual.jsp - Get the Windows Offline (64-bit) installer
-    * After installing, restart your computer (required!)
-2. On the [Releases](https://github.com/fribbels/Fribbels-Epic-7-Optimizer/releases) page, choose the latest release, and download the file that looks like ``FribbelsE7Optimizer-Setup-1.x.x.exe`` then run the installer
+1. On the maintained copy's [Releases](https://github.com/Mikakei/Fribbels-Epic-7-Optimizer/releases) page, download ``FribbelsE7Optimizer-<version>-win-x64.zip`` from the latest release
     * Do not download the Source Code options, those won't work
-3. Follow the steps to use either the auto importer
+2. Extract the zip to any folder, for example ``D:\FribbelsE7Optimizer``
+3. Run ``FribbelsE7Optimizer.exe`` in that folder
+    * Java is included, no separate install needed
+    * If Windows shows "Windows protected your PC", click "More info" and then "Run anyway". The app isn't code-signed, so Windows warns about it
+4. Follow the steps below to set up the auto importer
+
+**Updating:** Tools → 检查更新 (Check for updates) in the menu tells you when a new version is out. Download the new zip and replace the old folder with the new one. Your saves are in "Documents\FribbelsOptimizerSaves" and are not affected.
 
 #### Mac OS
+
+> The maintained copy has no macOS build. These are the instructions for the original author's official build (latest v1.10.0), which does not include the maintained copy's fixes.
 
 1. On the [Releases](https://github.com/fribbels/Fribbels-Epic-7-Optimizer/releases) page, choose the latest release, and download the file that looks like ``FribbelsE7Optimizer-x.x.x-mac.dmg``
     * Do not download the Source Code options, those won't work
@@ -311,9 +315,10 @@ The automatic importer is recommended and requires these additional steps:
 
 Check out the step-by-step video guide to follow along with instructions: https://youtu.be/bDjP5eiOfK0?t=182
 
-1. Install [Python 3.4+](https://www.python.org/downloads/release/python-392/) using the Windows installer (64-bit) option. Click for [direct download link to 3.9.2](https://www.python.org/ftp/python/3.9.2/python-3.9.2-amd64.exe). **IMPORTANT: Enable the option to add Python to PATH**
-2. Install [Npcap](https://nmap.org/npcap/#download) for Windows. Click for [direct download link](https://nmap.org/npcap/dist/npcap-1.31.exe). During installation, enable the setting to "Support raw 802.11 traffic (and monitor mode) for wireless adapters".
+1. Install [Python 3](https://www.python.org/downloads/) using the Windows installer (64-bit) option. **IMPORTANT: Enable the option to add Python to PATH**
+2. Install [Npcap](https://npcap.com/#download) (requires administrator rights). If you connect over Wi-Fi, enable the setting "Support raw 802.11 traffic (and monitor mode) for wireless adapters" during installation.
 3. Restart your computer
+4. Open the optimizer and use Tools → 检测导入环境 (Check importer setup) in the menu to confirm every check passes
 
 ##### First time  setup for the automatic importer on Mac
 1. Install [Python 3.4+](https://www.python.org/downloads/release/python-392/). This will require extra steps to set python3 as your default. Recommended to use pyenv (https://opensource.com/article/19/5/python-3-default-mac)
@@ -399,12 +404,13 @@ _________________
 ### Optimizer troubleshooting
 
 - If you're seeing Java issues:
-  - Make sure Java 8 - 64 bit is installed.
-  - Make sure that Java is in your path environment variable: https://mkyong.com/java/how-to-set-java_home-on-windows-10/
+  - The maintained copy's zip includes Java (the ``jre`` folder). Make sure the zip was fully extracted and the ``jre`` folder is there.
   - Try restarting your computer, and reopen the app (there might be an old subprocess still kicking around)
+  - With the original author's official build, make sure Java 8 - 64 bit is installed and in your path environment variable: https://mkyong.com/java/how-to-set-java_home-on-windows-10/
 
 - If you're having trouble running the app after downloading:
-  - You might have downloaded the Source code instead of the installer. Go to https://github.com/fribbels/Fribbels-Epic-7-Optimizer/releases and click on the 'FribbelsE7Optimizer-Setup-1.x.x.exe' file (for Windows, use the dmg for mac), not the Source code
+  - You might have downloaded the Source code. Go to https://github.com/Mikakei/Fribbels-Epic-7-Optimizer/releases and download ``FribbelsE7Optimizer-<version>-win-x64.zip``, not the Source code
+  - Extract the whole zip to a folder first instead of running the app from inside the zip
 
 - If you see a "Error: EPERM: operation not permitted" error pop up while importing, there are a couple potential fixes:
   - Restart your computer, especially if you installed Java recently
