@@ -249,9 +249,4 @@ yarn build
 
 ```bash
 git remote add upstream https://github.com/fribbels/Fribbels-Epic-7-Optimizer.git
-```
-
-## 已知但未处理的上游问题
-
-- #234：导入器只导入装备齐全的英雄。需要真实抓包数据才能复现和测试。
-- #235：macOS 上抓包选错网卡，只影响 Mac。
+``
