@@ -32,7 +32,9 @@
 - 实际跑了一次优化（12 件装备、64 种组合）：带 4 件及以上战意的组合生命 +1036，等于基础生命 5178 的 20%；追击套的件数统计也正确。
 - 先删除已穿戴的装备、再删除英雄，现在可以正常完成。
 
-**没有验证：** 装备导入（抓包扫描）。这需要真实的游戏流量。
+- 装备导入（抓包扫描）：用户在本机 MuMu 模拟器上实测，成功读取到数据。
+
+**没有验证：** 导入后 4 个新套装的名称是否正确，以及 STOVE 官方 PC 客户端能不能导入。
 
 ## 日常使用
 
@@ -56,7 +58,7 @@
 |---|---|
 | Python 3.14.7 | 已安装。`start-optimizer.cmd` 和 `check-importer.cmd` 都设置了 `PY_PYTHON=3.14`，因为 `py` 默认会选 3.15 rc1 |
 | 自带 scapy 2.5.0 | 在 3.14 上导入正常；在没有 Npcap 时，scanner.py 也能正常启动和结束 |
-| Npcap | **未安装**，需要你自己用管理员权限安装：[npcap.com/#download](https://npcap.com/#download)。"Support raw 802.11 traffic" 只有用无线网卡时才需要勾选 |
+| Npcap | 已由用户安装（2026-10-19）。重装时从 [npcap.com/#download](https://npcap.com/#download) 下载，需要管理员权限；"Support raw 802.11 traffic" 只有用无线网卡时才需要勾选 |
 | 解码服务器 | 可以访问 |
 
 装好 Npcap 后双击 `check-importer.cmd`，它会列出 scapy 能用的网卡，并检查解码服务器能不能访问。
@@ -65,7 +67,7 @@
 
 只要游戏流量经过这台电脑的网卡就能抓到：
 
-- **模拟器**（MuMu、BlueStacks 等）：README 正式列出支持。
+- **模拟器**（MuMu、BlueStacks 等）：README 正式列出支持。本机 MuMu 已实测可用（2026-10-19）。导入时要重启游戏，所以先暂停 Orange。
 - **Google Play Games 电脑版**：README 正式列出支持。
 - **手机**：连接电脑开的热点即可。README 正式列出支持。
 - **STOVE 官方 PC 客户端**：README 没写。issue #233（2025-09）里有两位用户说可以用，作者没有回复，我也没有验证过。
