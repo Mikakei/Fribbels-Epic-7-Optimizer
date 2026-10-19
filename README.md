@@ -1,5 +1,20 @@
 # Fribbels Epic 7 Gear Optimizer
 
+**English** | [简体中文](README.zh-CN.md)
+
+> **About this maintained copy**
+>
+> This is a self-maintained copy of [fribbels/Fribbels-Epic-7-Optimizer](https://github.com/fribbels/Fribbels-Epic-7-Optimizer). The original project has not been updated for a long time, so I made this maintained copy and fixed some problems:
+>
+> - Rebuilt the backend from the current source, so the Warfare, Pursuit, Weakening and Fervor sets that community contributors added later actually work
+> - Hero and artifact data refresh online again at startup, falling back to the copy on GitHub when the server's copy is stale
+> - Fixed an error when removing, unequipping or locking a hero after deleting gear they had equipped
+> - Removed the donation links, rewrote the Information tab, and added update, importer check and network diagnostic tools
+>
+> There is no installer for this copy yet. The Releases linked in [Installing the app](#installing-the-app) are the original author's official builds (latest v1.10.0) and do not include these fixes. See [MAINTENANCE.md](MAINTENANCE.md) (Chinese) for the changes and how to run this copy.
+>
+> Thank you to Fribbels for creating the optimizer, and to the community contributors who keep the hero and artifact data updated. The rest of this README is the original author's documentation.
+
 This is a tool for organizing gear and optimizing gear and unit builds for Epic 7. Gearing units can be time consuming and it's not easy to find optimal combinations of gear within the game, so I made this to help make the gearing process easier.
 
 Please see the [**Getting Started**](https://github.com/fribbels/Fribbels-Epic-7-Optimizer#getting-started) section for instructions on how to use the optimizer.
